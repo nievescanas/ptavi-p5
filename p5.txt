@@ -119,6 +119,7 @@ Se ha capturado una sesión SIP (archivo sip.cap.gz), que se puede abrir con Wir
 
 11. Una vez conectado, estudia el intercambio de tramas.
  ** ¿Qué protocolo(s) se utiliza(n)? ¿Para qué sirven estos protocolos?
+
     Utiliza sip para establecer la llamada a través del proxy, DNS para saber la ip de ekiga, ACK para asentir los mensajes, RTP para la transmision de audio y video en tiempo real.
  
  ** ¿Cuál es el tamaño de paquete de los mismos?
@@ -129,45 +130,77 @@ Se ha capturado una sesión SIP (archivo sip.cap.gz), que se puede abrir con Wir
     No se utilizan bits en este campo porque no llevan bytes de relleno las tramas.
 
  ** ¿Cuál es la periodicidad de los paquetes que se envían?
+    La periodicidad se calcula de la siguiente forma:
+    Primero miramos los bytes que se mandan en audio o video y despues playload.
     
  ** ¿Cuántos bits/segundo estamos enviando?
-
-
+    64.000 bits por segundo.
 
 [Al terminar el ejercicio es recomendable hacer commit de los ficheros modificados]
 
 12. Vamos a ver más a fondo el intercambio RTP. En Telephony hay una opción RTP. Empecemos mirando los flujos RTP.
  ** ¿Cuántos flujos hay? ¿por qué?
+    Hay dos flujos:
+        - Audio
+        - Video
  ** ¿Cuántos paquetes se pierden?
+    Ninguno. 0
  ** ¿Cuál es el valor máximo del delta? ¿Y qué es lo que significa el valor de delta?
- ** ¿Cuáles son los valores de jitter (medio y máximo)? ¿Qué quiere decir eso? ¿Estamos ante una conversación de calidad?
+    El valor maximo de la delta te indica el tiempo máximo que hay entre el envio de los paquetes, contra mas cercano a 0 sea, mejor.
+    Audio: 1290.444000
+    Viedo: 1290.479000
 
+ ** ¿Cuáles son los valores de jitter (medio y máximo)? ¿Qué quiere decir eso? ¿Estamos ante una conversación de calidad?
+    Es la variación en el retraso de los paquetes
+    Audio: 119.635154
+    Video: 183.095775
 
 13. Elige un paquete RTP de audio. Analiza el flujo de audio en Telephony -> RTP -> Stream Analysis.
  ** ¿Cuánto valen el delta y el jitter para el primer paquete que ha llegado?
- ** ¿Podemos saber si éste es el primer paquete que nos han enviado?
- ** Los valores de jitter son menores de 10ms hasta un paquete dado. ¿Cuál?
- ** ¿A qué se debe el cambio tan brusco del jitter?
- ** ¿Es comparable este cambio con el tiempo desde la recepción del paquete anterior? ¿Por qué?
- ** ¿Cuál es la dependencia entre el tiempo transcurrido desde el paquete anterior y el valor de jitter?
+    0
 
+ ** ¿Podemos saber si éste es el primer paquete que nos han enviado?
+    Lo podemos saber por el numero de secuencia y por el marker.
+
+ ** Los valores de jitter son menores de 10ms hasta un paquete dado. ¿Cuál?
+    Hasta el paquete 247, que pasa a 38.
+
+ ** ¿A qué se debe el cambio tan brusco del jitter?
+    Al cambio tan brsuco sufrido el la delta.
+
+ ** ¿Es comparable este cambio con el tiempo desde la recepción del paquete anterior? ¿Por qué?
+
+ ** ¿Cuál es la dependencia entre el tiempo transcurrido desde el paquete anterior y el valor de jitter?
+    El valor de la delta cambia, sube a 554.74.
 
 14. En Telephony selecciona el menú VoIP calls. Verás que se lista la llamada de voz IP capturada en una ventana emergente. Selecciona esa llamada y pulsa el botón Graph.
  ** ¿Cuánto dura la conversación?
- ** ¿Cuáles son sus SSRC? ¿Por qué hay varios SSRCs? ¿Hay CSRCs?
+    25 seg.
 
+ ** ¿Cuáles son sus SSRC? ¿Por qué hay varios SSRCs? ¿Hay CSRCs?
+    SSRC: 0xBF4AFD37
+    CSRCs: 0 
 
 15. Identifica la trama donde se finaliza la conversación.
  ** ¿Qué método SIP se utiliza?
- ** ¿En qué trama(s)?
- ** ¿Por qué crees que se envía varias veces?
+    Cierre de sesión:
+        BYE sip:500@86.64.162.35:5080
 
+ ** ¿En qué trama(s)?
+    4 tramas.
+
+ ** ¿Por qué crees que se envía varias veces?
+    Se manda varias veces porque da error, falta alguna información (alguna dirección ethernet). 
 
 16. Finalmente, se cierra la aplicación de VozIP.
  ** ¿Por qué aparece una instrucción SIP del tipo REGISTER?
- ** ¿En qué trama sucede esto?
- ** ¿En qué se diferencia con la instrucción que se utilizó con anterioridad (al principio de la sesión)?
+    Porque para darse de baja en el servidor es necesario mandar un Register con el campo de Expires = 0.
 
+ ** ¿En qué trama sucede esto?
+    Sucede en la 950 y en la 952. La segunda es la que se efectua ya que manda el nonce para verificarse.
+
+ ** ¿En qué se diferencia con la instrucción que se utilizó con anterioridad (al principio de la sesión)?
+    En el expires.
 
 
 [Al terminar el ejercicio es recomendable hacer commit de los ficheros modificados]
@@ -181,17 +214,36 @@ Captura una sesión SIP de una conversación con el número SIP sip:9999@qxip.ne
 
 17. Observa las diferencias en el inicio de la conversación entre el entorno del laboratorio y el del ejercicio anterior:
  ** ¿Es necesario el uso de DNS y STUN? ¿Por qué?
- ** ¿Son diferentes el registro y la descripción de la sesión?
+    Si que necesita utilizar dns ya que necesita saber la direccion ip del servidor.
 
+ ** ¿Son diferentes el registro y la descripción de la sesión?
+    
 
 18. Identifica las diferencias existentes entre esta conversación y la conversación anterior:
  ** ¿Cuántos flujos tenemos?
+    Hay 4 flujos:
+        - 2 Flujos de theora (video)
+        - 2 Flujos de Speex (audio)
+
  ** ¿Cuál es su periodicidad?
+    Speex: 
+        Manda 106 bytes cada 320 segundos. Por lo que manda un byte cada 3 seg. 
+
  ** ¿Cuánto es el valor máximo del delta y los valores medios y máximo del jitter?
+    Theora:    
+        Max delta: 32.057 y 32.703
+        Max Jitter: 1.213 y 0.791
+        Mean Jitter: 0.021 y 0.045
+    Speex:
+        Max delta: 30.616 y 36.528
+        Max Jitter: 13.747 y 14.079
+        Mean Jitter: 13.255 y 9.016
+
  ** ¿Podrías reproducir la conversación desde Wireshark? ¿Cómo? Comprueba que poniendo un valor demasiado pequeño para el buffer de jitter, la conversación puede no tener la calidad necesaria.
+    Si se puede. Te metes en Telephony y dentro seleccionamos VOIP CAllS.Hay dentro podemos reproduccir tanto el audio como el video seleccionando el flujo que queremos. 
+
  ** ¿Sabrías decir qué tipo de servicio ofrece sip:9999@qxip.net?
-
-
+    Music en espera sip: 9999@qxip.net (Cortesía de QUASARMUSIQ)
 
 [Al terminar el ejercicio es recomendable hacer commit de los ficheros modificados]
 
